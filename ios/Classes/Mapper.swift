@@ -191,7 +191,7 @@ public class Mapper {
             "dateCreated": message.timestamp,
             "messageBody": message.body,
             "channelSid": channelSid,
-            "memberSid": message.memberSid,
+            "memberSid": message.memberSid ?? "",
             "member": memberDict,
             "messageIndex": message.index,
             "type": messageTypeToString(message.messageType),

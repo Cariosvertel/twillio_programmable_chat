@@ -8,7 +8,7 @@ This package is currently work-in-progress and should not be used for production
 Check out our comprehensive [example](https://gitlab.com/twilio-flutter/programmable-chat/tree/master/example) provided with this plugin.
 
 ## Join the community
-If you have any question or problems, please join us on [Discord](https://discord.gg/42x46NH)
+If you have any question or problems, please join us on [Discord](https://discord.gg/MWnu4nW)
 
 ## FAQ
 Read the [Frequently Asked Questions](https://gitlab.com/twilio-flutter/programmable-chat/blob/master/FAQ.md) first before creating a new issue.

@@ -1,6 +1,10 @@
+## 0.1.1+3
+
+* Provided a default value of "" for `message.memberSid` when sending to the Dart layer from Swift.
+
 ## 0.1.1+2
 
-* Update previously final properties for `Channel` that are not available at `IDENTIFIER` sync state.
+* Updated previously final properties for `Channel` that are not available at `IDENTIFIER` sync state.
 
 ## 0.1.1+1
 
