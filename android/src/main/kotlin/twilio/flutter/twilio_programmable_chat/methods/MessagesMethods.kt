@@ -229,7 +229,7 @@ object MessagesMethods {
     fun getMessageByIndex(call: MethodCall, result: MethodChannel.Result) {
         val channelSid = call.argument<String>("channelSid")
                 ?: return result.error("ERROR", "Missing 'channelSid'", null)
-        val messageIndex = call.argument<Long>("messageIndex")
+        val messageIndex = call.argument<Int>("messageIndex")?.toLong()
                 ?: return result.error("ERROR", "Missing 'messageIndex'", null)
 
         TwilioProgrammableChatPlugin.chatClient?.channels?.getChannel(channelSid, object : CallbackListener<Channel>() {

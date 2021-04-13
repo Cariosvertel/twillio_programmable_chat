@@ -516,6 +516,7 @@ public class Mapper {
                 SwiftTwilioProgrammableChatPlugin.debug("Mapper.channelToDict => EventChannel for Channel($\(String(describing: sid)) detached")
                 channel.delegate = nil
                 SwiftTwilioProgrammableChatPlugin.channelListeners.removeValue(forKey: sid)
+                SwiftTwilioProgrammableChatPlugin.channelChannels.removeValue(forKey: sid)
             }
             return nil
         }

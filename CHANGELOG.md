@@ -1,3 +1,19 @@
+## 0.1.1+7
+
+* **Android**: Fixed type cast error parsing the `messageIndex` param for `getMessageByIndex` at native layer.
+
+## 0.1.1+6
+
+* Removed native layer Channel `EventChannel` when client is shutdown.
+
+## 0.1.1+5
+
+* Resolved a bug where `connectionState` could be `null` when network is disabled or changed.
+
+## 0.1.1+4
+
+* Resolved bug in which Channel event subscriptions failed to receive new events (e.g. `onMessageAdded`) after calling `shutdown` on an existing `ChatClient` and then initializing a new one with `TwilioProgrammableChat.create`
+
 ## 0.1.1+3
 
 * Provided a default value of "" for `message.memberSid` when sending to the Dart layer from Swift.

@@ -135,6 +135,7 @@ object Mapper {
                     TwilioProgrammableChatPlugin.debug("Mapper.channelToMap => EventChannel for Channel(${channel.sid}) detached")
                     channel.removeListener(TwilioProgrammableChatPlugin.channelListeners[channel.sid])
                     TwilioProgrammableChatPlugin.channelListeners.remove(channel.sid)
+                    TwilioProgrammableChatPlugin.channelChannels.remove(channel.sid)
                 }
             })
         }

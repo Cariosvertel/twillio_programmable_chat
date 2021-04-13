@@ -1,3 +1,5 @@
+## [Notice: Twilio Sunsetting Programmable Chat on July 25, 2022](https://www.twilio.com/changelog/programmable-chat-end-of-life)
+
 # twilio_programmable_chat
 Flutter plugin for [Twilio Programmable Chat](https://www.twilio.com/chat?utm_source=opensource&utm_campaign=flutter-plugin), which enables you to build a chat application. \
 This Flutter plugin is a community-maintained project for [Twilio Programmable Chat](https://www.twilio.com/vidchateo?utm_source=opensource&utm_campaign=flutter-plugin) and not maintained by Twilio. If you have any issues, please file an issue instead of contacting support.

@@ -106,6 +106,16 @@ class Channels {
   }
   //#endregion
 
+  /// Cleanly shuts down all the active channels.
+  ///
+  /// Each cached channel reference will be disposed and removed from the cache.
+  static Future<void> _shutdown() async {
+    _channelsMap.forEach((key, channel) async {
+      await channel._dispose();
+      _channelsMap.remove(key);
+    });
+  }
+
   /// Update properties from a map.
   void _updateFromMap(Map<String, dynamic> map) {
     //TODO: update naming and utilization of this method

@@ -36,6 +36,7 @@ class TypingEvent {
 class Channel {
   /// Local caching event stream so each instance will use the same stream.
   static final Map<String, Stream> _channelStreams = {};
+  static final Map<String, StreamSubscription> _channelStreamSubscriptions = {};
 
   //#region Private API properties
   final String _sid;
@@ -237,7 +238,7 @@ class Channel {
     _messages = Messages(this);
     _members = Members(_sid);
     _channelStreams[_sid] ??= EventChannel('twilio_programmable_chat/$_sid').receiveBroadcastStream(0);
-    _channelStreams[_sid].listen(_parseEvents);
+    _channelStreamSubscriptions[_sid] ??= _channelStreams[_sid].listen(_parseEvents);
   }
 
   /// Construct from a map.
@@ -446,6 +447,15 @@ class Channel {
     }
   }
   //#endregion
+
+  /// Safely dispose of this channel.
+  ///
+  /// Cancels the [StreamSubscription] and removes the cached reference of this channel.
+  Future<void> _dispose() async {
+    await _channelStreamSubscriptions[_sid].cancel();
+    _channelStreamSubscriptions.remove(_sid);
+    _channelStreams.remove(_sid);
+  }
 
   /// Update properties from a map.
   void _updateFromMap(Map<String, dynamic> map) {

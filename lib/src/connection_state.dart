@@ -16,4 +16,10 @@ enum ConnectionState {
 
   /// Server has rejected enabling transport and customer action is required.
   FATAL_ERROR,
+
+  /// Error in connecting or sending transport message. Possibly due to offline.
+  ERROR,
+
+  /// Client connection state is not known.
+  UNKNOWN,
 }

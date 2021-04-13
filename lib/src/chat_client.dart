@@ -262,6 +262,7 @@ class ChatClient {
   /// It will dispose() the client after shutdown, so it could not be reused.
   Future<void> shutdown() async {
     try {
+      await Channels._shutdown();
       await _chatStream.cancel();
       await _notificationStream.cancel();
       TwilioProgrammableChat.chatClient = null;
