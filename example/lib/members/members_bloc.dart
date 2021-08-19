@@ -6,18 +6,17 @@ import 'package:twilio_programmable_chat/twilio_programmable_chat.dart';
 class MembersBloc {
   ChatClient chatClient;
   ChannelDescriptor channelDescriptor;
-  Channel channel;
 
-  BehaviorSubject<MemberData> _membersSubject;
-  ValueStream<MemberData> membersStream;
+  late BehaviorSubject<MemberData> _membersSubject;
+  late ValueStream<MemberData> membersStream;
 
-  List<StreamSubscription> _subscriptions;
-  StreamSubscription _channelSyncSubscription;
+  late List<StreamSubscription> _subscriptions;
+  StreamSubscription? _channelSyncSubscription;
   final Map<String, UserDescriptor> _userDescriptorMap = {};
 
   Map<String, UserDescriptor> get userDescriptorMap => _userDescriptorMap;
 
-  MembersBloc({this.chatClient, this.channelDescriptor}) {
+  MembersBloc({required this.chatClient, required this.channelDescriptor}) {
     _membersSubject = BehaviorSubject<MemberData>();
     _membersSubject.add(MemberData());
 
@@ -25,22 +24,24 @@ class MembersBloc {
     _subscriptions = <StreamSubscription>[];
 
     channelDescriptor.getChannel().then((channel) {
-      this.channel = channel;
-      if (channel.hasSynchronized) {
-        _getMembers();
-      } else {
-        _channelSyncSubscription = channel.onSynchronizationChanged.listen((event) async {
-          if (event.synchronizationStatus == ChannelSynchronizationStatus.ALL) {
-            await _getMembers();
-            await _channelSyncSubscription.cancel();
-            _channelSyncSubscription = null;
-          }
-        });
-      }
+      final _channel = channel;
+      if (_channel != null) {
+        if (_channel.hasSynchronized) {
+          _getMembers();
+        } else {
+          _channelSyncSubscription = _channel.onSynchronizationChanged.listen((event) async {
+            if (event.synchronizationStatus == ChannelSynchronizationStatus.ALL) {
+              await _getMembers();
+              await _channelSyncSubscription?.cancel();
+              _channelSyncSubscription = null;
+            }
+          });
+        }
 
-      _subscriptions.add(channel.onMemberAdded.listen(_onMemberAdded));
-      _subscriptions.add(channel.onMemberUpdated.listen(_onMemberUpdated));
-      _subscriptions.add(channel.onMemberDeleted.listen(_onMemberDeleted));
+        _subscriptions.add(_channel.onMemberAdded.listen(_onMemberAdded));
+        _subscriptions.add(_channel.onMemberUpdated.listen(_onMemberUpdated));
+        _subscriptions.add(_channel.onMemberDeleted.listen(_onMemberDeleted));
+      }
     });
   }
 
@@ -49,36 +50,47 @@ class MembersBloc {
   }
 
   Future _getMembers() async {
-    var c = await channelDescriptor.getChannel();
-    var membersList = await c.members.getMembersList();
-    for (var member in membersList) {
-      final userDescriptor = await member.getUserDescriptor();
-      _userDescriptorMap[member.sid] = userDescriptor;
+    final channel = await channelDescriptor.getChannel();
+    final membersList = await channel?.members.getMembersList();
+    if (membersList != null) {
+      for (var member in membersList) {
+        final userDescriptor = await member.getUserDescriptor();
+        final sid = member.sid;
+        if (sid != null) {
+          _userDescriptorMap[sid] = userDescriptor;
+        }
+      }
+      _membersSubject.add(MemberData(members: membersList, userDescriptors: _userDescriptorMap));
     }
-    _membersSubject.add(MemberData(members: membersList, userDescriptors: _userDescriptorMap));
   }
 
   Future _onMemberAdded(Member member) async {
-    var memberData = _membersSubject.value;
-    var userDescriptor = await member.getUserDescriptor();
+    final memberData = _membersSubject.value;
+    final userDescriptor = await member.getUserDescriptor();
     memberData.members.add(member);
-    memberData.userDescriptors[member.sid] = userDescriptor;
+    final sid = member.sid;
+    if (sid != null) {
+      memberData.userDescriptors[sid] = userDescriptor;
+    }
     _membersSubject.add(memberData);
   }
 
   Future _onMemberUpdated(MemberUpdatedEvent event) async {
-    var memberData = _membersSubject.value;
-    var userDescriptor = await event.member.getUserDescriptor();
-    var memberIndex = memberData.members.indexWhere((m) => m.sid == event.member.sid);
+    final memberData = _membersSubject.value;
+    final userDescriptor = await event.member.getUserDescriptor();
+    final memberIndex = memberData.members.indexWhere((m) => m.sid == event.member.sid);
     memberData.members[memberIndex] = event.member;
-    memberData.userDescriptors[event.member.sid] = userDescriptor;
+    final sid = event.member.sid;
+    if (sid != null) {
+      memberData.userDescriptors[sid] = userDescriptor;
+    }
     _membersSubject.add(memberData);
   }
 
   void _onMemberDeleted(Member member) {
-    var memberData = _membersSubject.value;
+    final memberData = _membersSubject.value;
     memberData.members.removeWhere((m) => m.sid == member.sid);
-    memberData.userDescriptors[member.sid] = null;
+    memberData.userDescriptors.remove(member.sid);
     _membersSubject.add(memberData);
   }
 

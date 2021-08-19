@@ -2,51 +2,51 @@ part of twilio_programmable_chat;
 
 class Message {
   //#region Private API properties
-  final String _sid;
+  final String? _sid;
 
-  final String _author;
+  final String? _author;
 
-  final DateTime _dateCreated;
+  final DateTime? _dateCreated;
 
-  String _messageBody;
+  String? _messageBody;
 
   final String _channelSid;
 
-  final String _memberSid;
+  final String? _memberSid;
 
-  final Member _member;
+  final Member? _member;
 
   final Messages _messages;
 
-  final int _messageIndex;
+  final int? _messageIndex;
 
-  final MessageType _type;
+  final MessageType? _type;
 
   final bool _hasMedia;
 
-  final MessageMedia _media;
+  final MessageMedia? _media;
 
   final Attributes _attributes;
   //#endregion
 
   //#region Public API properties
   /// Returns the identifier for this message.
-  String get sid {
+  String? get sid {
     return _sid;
   }
 
   /// The global identity of the author of this message.
-  String get author {
+  String? get author {
     return _author;
   }
 
   /// The creation date for this message.
-  DateTime get dateCreated {
+  DateTime? get dateCreated {
     return _dateCreated;
   }
 
   /// The body for this message.
-  String get messageBody {
+  String? get messageBody {
     return _messageBody;
   }
 
@@ -56,12 +56,12 @@ class Message {
   }
 
   /// Returns the member SID of the member this message sent by.
-  String get memberSid {
+  String? get memberSid {
     return _memberSid;
   }
 
   /// Returns the member this message sent by.
-  Member get member {
+  Member? get member {
     return _member;
   }
 
@@ -71,14 +71,14 @@ class Message {
   }
 
   /// Returns the index number for this message.
-  int get messageIndex {
+  int? get messageIndex {
     return _messageIndex;
   }
 
   /// Returns message type.
   ///
   /// If message has media type then [Message.media] shall return the descriptor for the attached media.
-  MessageType get type {
+  MessageType? get type {
     return _type;
   }
 
@@ -90,7 +90,7 @@ class Message {
   /// Get media descriptor of an associated media attachment, if exists.
   ///
   /// If the message type is [MessageType.TEXT] this method will return null.
-  MessageMedia get media {
+  MessageMedia? get media {
     return _media;
   }
 
@@ -113,33 +113,23 @@ class Message {
     this._hasMedia,
     this._media,
     this._attributes,
-  )   : assert(_sid != null),
-        assert(_author != null),
-        assert(_dateCreated != null),
-        assert(_channelSid != null),
-        assert(_memberSid != null),
-        assert(_messages != null),
-        assert(_messageIndex != null),
-        assert(_type != null),
-        assert(_attributes != null),
-        assert(_hasMedia != null),
-        assert((_hasMedia == true && _media != null) || (_hasMedia == false && _media == null));
+  ) : assert((_hasMedia == true && _media != null) || (_hasMedia == false && _media == null));
 
   /// Construct from a map.
   factory Message._fromMap(Map<String, dynamic> map, Messages messages) {
-    var message = Message(
+    final message = Message(
       map['sid'],
       map['author'],
       DateTime.parse(map['dateCreated']),
       map['channelSid'],
       map['memberSid'],
-      Member._fromMap(map['member']?.cast<String, dynamic>()),
+      map['member'] != null ? Member._fromMap(map['member'].cast<String, dynamic>()) : null,
       messages,
       map['messageIndex'],
       EnumToString.fromString(MessageType.values, map['type']),
       map['hasMedia'],
-      MessageMedia._fromMap(map['media']?.cast<String, dynamic>()),
-      Attributes.fromMap(map['attributes'].cast<String, dynamic>()),
+      map['media'] != null ? MessageMedia._fromMap(map['media'].cast<String, dynamic>()) : null,
+      map['attributes'] != null ? Attributes.fromMap(map['attributes'].cast<String, dynamic>()) : Attributes(AttributesType.NULL, null),
     );
     message._updateFromMap(map);
     return message;
@@ -147,8 +137,8 @@ class Message {
 
   //#region Public API methods
   /// Returns the parent channel this message belongs to.
-  Future<Channel> getChannel() async {
-    var channel = await TwilioProgrammableChat.chatClient.channels.getChannel(_channelSid);
+  Future<Channel?> getChannel() async {
+    final channel = await TwilioProgrammableChat.chatClient?.channels.getChannel(_channelSid);
     return channel;
   }
 

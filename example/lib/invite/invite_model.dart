@@ -10,7 +10,7 @@ class InviteModel {
     this.isLoading = false,
   });
 
-  InviteModel copyWith({bool isLoading, Map<String, Member> membersMap}) {
+  InviteModel copyWith({bool? isLoading, Map<String, Member>? membersMap}) {
     return InviteModel(
       membersMap: membersMap ?? this.membersMap,
       isLoading: isLoading ?? this.isLoading,

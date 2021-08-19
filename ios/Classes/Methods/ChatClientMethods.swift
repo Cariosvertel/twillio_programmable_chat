@@ -28,6 +28,12 @@ public class ChatClientMethods {
 
     public static func shutdown(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         SwiftTwilioProgrammableChatPlugin.chatListener?.chatClient?.shutdown()
+        disposeListeners()
         result(nil)
+    }
+
+    private static func disposeListeners() {
+        SwiftTwilioProgrammableChatPlugin.chatListener = nil
+        SwiftTwilioProgrammableChatPlugin.channelListeners.removeAll()
     }
 }

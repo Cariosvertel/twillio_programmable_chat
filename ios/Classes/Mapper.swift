@@ -29,9 +29,9 @@ public class Mapper {
     public static func channelToDict(_ channel: TCHChannel?) -> [String: Any]? {
         if let channel = channel as TCHChannel?, let sid = channel.sid {
             // TODO: determine if there's a more logical spot to do this initialization as setting up listeners isn't really the job of a mapper
-            if !SwiftTwilioProgrammableChatPlugin.channelChannels.keys.contains(sid) {
-                SwiftTwilioProgrammableChatPlugin.channelChannels[sid] = FlutterEventChannel(name: "twilio_programmable_chat/\(sid)", binaryMessenger: SwiftTwilioProgrammableChatPlugin.messenger!)
-                SwiftTwilioProgrammableChatPlugin.channelChannels[sid]?.setStreamHandler(ChannelStreamHandler(channel))
+            if !SwiftTwilioProgrammableChatPlugin.channelListeners.keys.contains(sid) {
+                SwiftTwilioProgrammableChatPlugin.channelListeners[sid] = ChannelListener(sid)
+                channel.delegate = SwiftTwilioProgrammableChatPlugin.channelListeners[sid]
             }
 
             return [
@@ -493,32 +493,5 @@ public class Mapper {
             }
         }
         return nil
-    }
-
-    class ChannelStreamHandler: NSObject, FlutterStreamHandler {
-        let channel: TCHChannel
-
-        init(_ channel: TCHChannel) {
-            self.channel = channel
-        }
-
-        func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-            if let sid = channel.sid {
-                SwiftTwilioProgrammableChatPlugin.debug("Mapper.channelToDict => EventChannel for Channel($\(String(describing: sid)) attached")
-                SwiftTwilioProgrammableChatPlugin.channelListeners[sid] = ChannelListener(events)
-                channel.delegate = SwiftTwilioProgrammableChatPlugin.channelListeners[sid]
-            }
-            return nil
-        }
-
-        func onCancel(withArguments arguments: Any?) -> FlutterError? {
-            if let sid = channel.sid {
-                SwiftTwilioProgrammableChatPlugin.debug("Mapper.channelToDict => EventChannel for Channel($\(String(describing: sid)) detached")
-                channel.delegate = nil
-                SwiftTwilioProgrammableChatPlugin.channelListeners.removeValue(forKey: sid)
-                SwiftTwilioProgrammableChatPlugin.channelChannels.removeValue(forKey: sid)
-            }
-            return nil
-        }
     }
 }

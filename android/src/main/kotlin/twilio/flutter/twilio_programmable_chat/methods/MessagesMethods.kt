@@ -91,7 +91,7 @@ object MessagesMethods {
     fun removeMessage(call: MethodCall, result: MethodChannel.Result) {
         val channelSid = call.argument<String>("channelSid")
                 ?: return result.error("ERROR", "Missing 'channelSid'", null)
-        val messageIndex = call.argument<Long>("messageIndex")
+        val messageIndex = call.argument<Int>("messageIndex")?.toLong()
                 ?: return result.error("ERROR", "Missing 'messageIndex'", null)
 
         TwilioProgrammableChatPlugin.chatClient?.channels?.getChannel(channelSid, object : CallbackListener<Channel>() {
@@ -130,7 +130,7 @@ object MessagesMethods {
     }
 
     fun getMessagesBefore(call: MethodCall, result: MethodChannel.Result) {
-        val index = call.argument<Long>("index")
+        val index = call.argument<Int>("index")?.toLong()
                 ?: return result.error("ERROR", "Missing 'index'", null)
         val count = call.argument<Int>("count")
                 ?: return result.error("ERROR", "Missing 'count'", null)
@@ -289,7 +289,7 @@ object MessagesMethods {
     fun advanceLastConsumedMessageIndexWithResult(call: MethodCall, result: MethodChannel.Result) {
         val channelSid = call.argument<String>("channelSid")
                 ?: return result.error("ERROR", "Missing 'channelSid'", null)
-        val lastConsumedMessageIndex = call.argument<Long>("lastConsumedMessageIndex")
+        val lastConsumedMessageIndex = call.argument<Int>("lastConsumedMessageIndex")?.toLong()
                 ?: return result.error("ERROR", "Missing 'lastConsumedMessageIndex'", null)
 
         TwilioProgrammableChatPlugin.chatClient?.channels?.getChannel(channelSid, object : CallbackListener<Channel>() {

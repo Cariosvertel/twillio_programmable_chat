@@ -27,9 +27,15 @@ object ChatClientMethods {
     fun shutdown(call: MethodCall, result: MethodChannel.Result) {
         return try {
             TwilioProgrammableChatPlugin.chatClient?.shutdown()
+            disposeListeners()
             result.success(null)
         } catch (err: Exception) {
             result.error("ERROR", err.message, null)
         }
+    }
+
+    private fun disposeListeners() {
+        TwilioProgrammableChatPlugin.chatListener = null
+        TwilioProgrammableChatPlugin.channelListeners.clear()
     }
 }

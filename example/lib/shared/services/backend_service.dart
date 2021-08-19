@@ -7,19 +7,17 @@ abstract class BackendService {
   Future<TwilioChatTokenResponse> createToken(TwilioChatTokenRequest twilioChatTokenRequest);
 }
 
-class FirebaseFunctions implements BackendService {
-  FirebaseFunctions._();
+class TwilioFirebaseFunctions implements BackendService {
+  TwilioFirebaseFunctions._();
 
-  static final instance = FirebaseFunctions._();
-
-  final CloudFunctions cf = CloudFunctions(region: 'europe-west1');
+  static final instance = TwilioFirebaseFunctions._();
 
   @override
   Future<TwilioChatTokenResponse> createToken(TwilioChatTokenRequest twilioChatTokenRequest) async {
     try {
-      final response = await cf.getHttpsCallable(functionName: 'createToken').call(twilioChatTokenRequest.toMap());
+      final response = await FirebaseFunctions.instance.httpsCallable('createToken').call(twilioChatTokenRequest.toMap());
       return TwilioChatTokenResponse.fromMap(Map<String, dynamic>.from(response.data));
-    } on CloudFunctionsException catch (e) {
+    } on FirebaseFunctionsException catch (e) {
       throw PlatformException(
         code: e.code,
         message: e.message,

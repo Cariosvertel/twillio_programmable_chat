@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:twilio_programmable_chat_example/models/twilio_chat_token_request.dart';
 import 'package:twilio_programmable_chat_example/join/join_model.dart';
@@ -10,7 +9,7 @@ class JoinBloc {
 
   final BehaviorSubject<JoinModel> _modelSubject = BehaviorSubject<JoinModel>.seeded(JoinModel());
 
-  JoinBloc({@required this.backendService}) : assert(backendService != null);
+  JoinBloc({required this.backendService});
 
   Stream<JoinModel> get modelStream => _modelSubject.stream;
 
@@ -26,9 +25,13 @@ class JoinBloc {
       final twilioRoomTokenResponse = await backendService.createToken(
         TwilioChatTokenRequest(identity: model.identity),
       );
-      var properties = Properties();
+      final properties = Properties();
       await TwilioProgrammableChat.debug(dart: true, native: true, sdk: false);
-      var chatClient = await TwilioProgrammableChat.create(twilioRoomTokenResponse.token, properties);
+      final token = twilioRoomTokenResponse.token;
+      if (token == null) {
+        throw Exception('Response token is null.');
+      }
+      final chatClient = await TwilioProgrammableChat.create(token, properties);
       updateWith(identity: twilioRoomTokenResponse.identity, chatClient: chatClient);
     } catch (err) {
       rethrow;
@@ -40,10 +43,10 @@ class JoinBloc {
   void updateIdentity(String identity) => updateWith(identity: identity);
 
   void updateWith({
-    bool isLoading,
-    bool isSubmitted,
-    ChatClient chatClient,
-    String identity,
+    bool? isLoading,
+    bool? isSubmitted,
+    ChatClient? chatClient,
+    String? identity,
   }) {
     _modelSubject.value = model.copyWith(
       isLoading: isLoading,

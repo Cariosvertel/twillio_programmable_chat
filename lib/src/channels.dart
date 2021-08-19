@@ -9,25 +9,17 @@ class Channels {
   //#region Public API properties
   /// Request list of user's joined channels.
   List<Channel> get subscribedChannels {
-    return _channelsMap.values.where((channel) => channel._isSubscribed).toList();
+    return _channelsMap.values.where((channel) => channel.isSubscribed).toList();
   }
   //#endregion
 
   Channels();
 
-  /// Construct from a map.
-  factory Channels._fromMap(Map<String, dynamic> map) {
-    var channels = Channels();
-    channels._updateFromMap(map);
-    return channels;
-  }
-
   //#region Public API methods
   /// Create a [Channel] with friendly name and type.
   ///
   /// This operation creates a new channel entity on the backend.
-  Future<Channel> createChannel(String friendlyName, ChannelType channelType) async {
-    assert(channelType != null);
+  Future<Channel?> createChannel(String friendlyName, ChannelType channelType) async {
     try {
       final methodData = await TwilioProgrammableChat._methodChannel.invokeMethod('Channels#createChannel', <String, Object>{'friendlyName': friendlyName, 'channelType': EnumToString.convertToString(channelType)});
       final channelMap = Map<String, dynamic>.from(methodData);
@@ -42,7 +34,7 @@ class Channels {
   }
 
   /// Retrieves a [Channel] with the specified SID or unique name.
-  Future<Channel> getChannel(String channelSidOrUniqueName) async {
+  Future<Channel?> getChannel(String channelSidOrUniqueName) async {
     try {
       final methodData = await TwilioProgrammableChat._methodChannel.invokeMethod('Channels#getChannel', <String, Object>{'channelSidOrUniqueName': channelSidOrUniqueName});
       final channelMap = Map<String, dynamic>.from(methodData);
@@ -93,13 +85,15 @@ class Channels {
   Future<List<Member>> getMembersByIdentity(String identity) async {
     try {
       final methodData = await TwilioProgrammableChat._methodChannel.invokeMethod('Channels#getMembersByIdentity', {'identity': identity});
-      final List<Map<String, dynamic>> memberMapList = methodData.map<Map<String, dynamic>>((r) => Map<String, dynamic>.from(r)).toList();
+      final List<Map<String, dynamic>?> memberMapList = methodData.map<Map<String, dynamic>>((r) => Map<String, dynamic>.from(r)).toList();
 
-      var memberList = [];
+      final memberList = [];
       for (final memberMap in memberMapList) {
-        memberList.add(Member._fromMap(memberMap));
+        if (memberMap != null) {
+          memberList.add(Member._fromMap(memberMap));
+        }
       }
-      return memberList;
+      return memberList as FutureOr<List<Member>>;
     } on PlatformException catch (err) {
       throw TwilioProgrammableChat._convertException(err);
     }
@@ -110,10 +104,7 @@ class Channels {
   ///
   /// Each cached channel reference will be disposed and removed from the cache.
   static Future<void> _shutdown() async {
-    _channelsMap.forEach((key, channel) async {
-      await channel._dispose();
-      _channelsMap.remove(key);
-    });
+    _channelsMap.clear();
   }
 
   /// Update properties from a map.
@@ -121,23 +112,29 @@ class Channels {
     //TODO: update naming and utilization of this method
     if (map['subscribedChannels'] != null) {
       final List<Map<String, dynamic>> subscribedChannelsList = map['subscribedChannels'].map<Map<String, dynamic>>((r) => Map<String, dynamic>.from(r)).toList();
-      _channelsMap.values.forEach((channel) => channel._isSubscribed = false);
+      _channelsMap.values.forEach((channel) => channel._setSubscribed(false));
       for (final subscribedChannelMap in subscribedChannelsList) {
-        var sid = subscribedChannelMap['sid'];
+        final sid = subscribedChannelMap['sid'];
         _updateChannelFromMap(subscribedChannelMap);
-        _channelsMap[sid]._isSubscribed = true;
+        _channelsMap[sid]?._setSubscribed(true);
       }
     }
   }
 
+  void _routeChannelEvent(String channelSid, dynamic event) {
+    _channelsMap[channelSid]?._parseEvents(event);
+  }
+
   /// Update individual channel from a map.
   static void _updateChannelFromMap(Map<String, dynamic> channelMap) {
-    var sid = channelMap['sid'];
-    if (_channelsMap[sid] == null) {
-      _channelsMap[sid] = Channel._fromMap(channelMap);
-      _channelsMap[sid]._isSubscribed = false;
-    } else {
-      _channelsMap[sid]._updateFromMap(channelMap);
+    final sid = channelMap['sid'];
+    if (sid != null) {
+      if (!_channelsMap.containsKey(sid)) {
+        _channelsMap[sid] = Channel._fromMap(channelMap);
+        _channelsMap[sid]?._setSubscribed(false);
+      } else {
+        _channelsMap[sid]?._updateFromMap(channelMap);
+      }
     }
   }
 }

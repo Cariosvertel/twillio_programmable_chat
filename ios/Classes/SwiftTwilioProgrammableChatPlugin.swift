@@ -13,7 +13,7 @@ public class SwiftTwilioProgrammableChatPlugin: NSObject, FlutterPlugin {
 
     public static var chatListener: ChatListener?
 
-    public static var channelChannels: [String: FlutterEventChannel] = [:]
+    public static var channelEventSink: FlutterEventSink?
 
     public static var channelListeners: [String: ChannelListener] = [:]
 
@@ -37,6 +37,8 @@ public class SwiftTwilioProgrammableChatPlugin: NSObject, FlutterPlugin {
 
     private var chatChannel: FlutterEventChannel?
 
+    private var channelEventChannel: FlutterEventChannel?
+
     private var mediaProgressChannel: FlutterEventChannel?
 
     private var loggingChannel: FlutterEventChannel?
@@ -54,8 +56,11 @@ public class SwiftTwilioProgrammableChatPlugin: NSObject, FlutterPlugin {
         methodChannel = FlutterMethodChannel(name: "twilio_programmable_chat", binaryMessenger: registrar.messenger())
         methodChannel?.setMethodCallHandler(pluginHandler.handle)
 
-        chatChannel = FlutterEventChannel(name: "twilio_programmable_chat/room", binaryMessenger: registrar.messenger())
+        chatChannel = FlutterEventChannel(name: "twilio_programmable_chat/chat", binaryMessenger: registrar.messenger())
         chatChannel?.setStreamHandler(ChatStreamHandler())
+
+        channelEventChannel = FlutterEventChannel(name: "twilio_programmable_chat/channel", binaryMessenger: registrar.messenger())
+        channelEventChannel?.setStreamHandler(ChannelStreamHandler())
 
         mediaProgressChannel = FlutterEventChannel(
             name: "twilio_programmable_chat/media_progress", binaryMessenger: registrar.messenger())
@@ -141,9 +146,23 @@ public class SwiftTwilioProgrammableChatPlugin: NSObject, FlutterPlugin {
         }
 
         func onCancel(withArguments arguments: Any?) -> FlutterError? {
-            SwiftTwilioProgrammableChatPlugin.debug("RoomStreamHandler.onCancel => Room eventChannel detached")
+            SwiftTwilioProgrammableChatPlugin.debug("ChatStreamHandler.onCancel => Chat eventChannel detached")
             guard let chatListener = SwiftTwilioProgrammableChatPlugin.chatListener else { return nil }
             chatListener.events = nil
+            return nil
+        }
+    }
+
+    class ChannelStreamHandler: NSObject, FlutterStreamHandler {
+        func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+            SwiftTwilioProgrammableChatPlugin.debug("ChannelStreamHandler.onListen => Channel eventChannel attached")
+            channelEventSink = events
+            return nil
+        }
+
+        func onCancel(withArguments arguments: Any?) -> FlutterError? {
+            SwiftTwilioProgrammableChatPlugin.debug("ChannelStreamHandler.onCancel => Channel eventChannel detached")
+            channelEventSink = nil
             return nil
         }
     }

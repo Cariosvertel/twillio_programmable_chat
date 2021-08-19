@@ -115,9 +115,10 @@ class PluginHandler(private val applicationContext: Context) : MethodCallHandler
                 propertiesBuilder.setDeferCertificateTrustToPlatform(propertiesObj["deferCA"] as Boolean)
             }
 
-            TwilioProgrammableChatPlugin.chatListener = ChatListener(propertiesBuilder.createProperties())
+            val chatListener = ChatListener(propertiesBuilder.createProperties())
+            TwilioProgrammableChatPlugin.chatListener = chatListener
 
-            ChatClient.create(applicationContext, token, TwilioProgrammableChatPlugin.chatListener.properties, object : CallbackListener<ChatClient>() {
+            ChatClient.create(applicationContext, token, chatListener.properties, object : CallbackListener<ChatClient>() {
                 override fun onSuccess(chatClient: ChatClient) {
                     chatClient.users.myUser
                     TwilioProgrammableChatPlugin.debug("TwilioProgrammableChatPlugin.create => ChatClient.create onSuccess: myIdentity is '${chatClient.myIdentity}'")

@@ -7,7 +7,7 @@ void main() {
 
   final methodCalls = <MethodCall>[];
   var nativeDebugIsCalled = false;
-  var nativeConnectIsCalled = false; // ignore: unused_local_variable
+  final nativeConnectIsCalled = false; // ignore: unused_local_variable
 
   setUpAll(() {
     // ignore: missing_return

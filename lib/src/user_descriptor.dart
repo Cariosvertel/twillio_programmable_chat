@@ -5,18 +5,18 @@ part of twilio_programmable_chat;
 /// Unlike [User], this information won't be updated in realtime. To have refreshed data, user should query user descriptors again.
 /// From the user descriptor you could obtain full [User] object by calling [UserDescriptor.subscribe].
 class UserDescriptor {
-  final String _friendlyName;
+  final String? _friendlyName;
 
   final Attributes _attributes;
 
-  final String _identity;
+  final String? _identity;
 
   final bool _isOnline;
 
   final bool _isNotifiable;
 
   /// Get user friendly name.
-  String get friendlyName {
+  String? get friendlyName {
     return _friendlyName;
   }
 
@@ -26,7 +26,7 @@ class UserDescriptor {
   }
 
   /// Get user identity.
-  String get identity {
+  String? get identity {
     return _identity;
   }
 
@@ -40,26 +40,26 @@ class UserDescriptor {
     return _isNotifiable;
   }
 
-  UserDescriptor(this._friendlyName, this._attributes, this._identity, this._isOnline, this._isNotifiable)
-      : assert(_attributes != null),
-        assert(_identity != null),
-        assert(_isOnline != null),
-        assert(_isNotifiable != null);
+  UserDescriptor(this._friendlyName, this._attributes, this._identity, this._isOnline, this._isNotifiable);
 
   /// Construct from a map.
   factory UserDescriptor._fromMap(Map<String, dynamic> map) {
     return UserDescriptor(
       map['friendlyName'],
-      Attributes.fromMap(map['attributes'].cast<String, dynamic>()),
+      map['attributes'] != null ? Attributes.fromMap(map['attributes'].cast<String, dynamic>()) : Attributes(AttributesType.NULL, null),
       map['identity'],
-      map['isOnline'],
-      map['isNotifiable'],
+      map['isOnline'] ?? false,
+      map['isNotifiable'] ?? false,
     );
   }
 
   /// Subscribe to the user object.
-  Future<User> subscribe() async {
-    final user = await TwilioProgrammableChat.chatClient.users?.getAndSubscribeUser(_identity);
+  Future<User?> subscribe() async {
+    final identity = _identity;
+    if (identity == null) {
+      throw Exception('Cannot subscribe User with identity: $identity.');
+    }
+    final user = await TwilioProgrammableChat.chatClient?.users.getAndSubscribeUser(identity);
     return user;
   }
 }

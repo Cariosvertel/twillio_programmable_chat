@@ -15,6 +15,7 @@ linter:
     - unnecessary_brace_in_string_interps
     - non_constant_identifier_names
     - cancel_subscriptions
+    - prefer_final_locals
 
 # analyzer:
 #   exclude:

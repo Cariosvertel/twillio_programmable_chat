@@ -23,6 +23,8 @@ class TwilioProgrammableChatPlugin : FlutterPlugin {
 
     private lateinit var chatChannel: EventChannel
 
+    private lateinit var channelEventChannel: EventChannel
+
     private lateinit var mediaProgressChannel: EventChannel
 
     private lateinit var loggingChannel: EventChannel
@@ -66,10 +68,11 @@ class TwilioProgrammableChatPlugin : FlutterPlugin {
 
         var nativeDebug: Boolean = false
 
-        lateinit var chatListener: ChatListener
+        var chatListener: ChatListener? = null
 
-        var channelChannels: HashMap<String, EventChannel> = hashMapOf()
         var channelListeners: HashMap<String, ChannelListener> = hashMapOf()
+
+        var channelEventSink: EventChannel.EventSink? = null
 
         @JvmStatic
         fun debug(msg: String) {
@@ -93,17 +96,30 @@ class TwilioProgrammableChatPlugin : FlutterPlugin {
         methodChannel = MethodChannel(messenger, "twilio_programmable_chat")
         methodChannel.setMethodCallHandler(pluginHandler)
 
-        chatChannel = EventChannel(messenger, "twilio_programmable_chat/room")
+        chatChannel = EventChannel(messenger, "twilio_programmable_chat/chat")
         chatChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
                 debug("TwilioProgrammableChatPlugin.onAttachedToEngine => Chat eventChannel attached")
-                chatListener.events = events
+                chatListener?.events = events
                 chatClient?.setListener(chatListener)
             }
 
             override fun onCancel(arguments: Any?) {
                 debug("TwilioProgrammableChatPlugin.onAttachedToEngine => Chat eventChannel detached")
-                chatListener.events = null
+                chatListener?.events = null
+            }
+        })
+
+        channelEventChannel = EventChannel(messenger, "twilio_programmable_chat/channel")
+        channelEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                debug("TwilioProgrammableChatPlugin.onAttachedToEngine => Channel eventChannel attached")
+                channelEventSink = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                debug("TwilioProgrammableChatPlugin.onAttachedToEngine => Channel eventChannel detached")
+                channelEventSink = null
             }
         })
 

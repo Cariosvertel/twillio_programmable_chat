@@ -8,7 +8,7 @@ class AddChannelDialog extends StatefulWidget {
 
 class _AddChannelDialogState extends State<AddChannelDialog> {
   final _controller = TextEditingController();
-  var _channelType = ChannelType.PUBLIC;
+  ChannelType _channelType = ChannelType.PUBLIC;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,9 @@ class _AddChannelDialogState extends State<AddChannelDialog> {
                       title: const Text('Public'),
                       selected: _channelType == ChannelType.PUBLIC,
                       onChanged: (type) => setState(() {
-                        _channelType = type;
+                        if (type != null) {
+                          _channelType = type;
+                        }
                       }),
                     ),
                   ),
@@ -57,7 +59,9 @@ class _AddChannelDialogState extends State<AddChannelDialog> {
                       title: const Text('Private'),
                       selected: _channelType == ChannelType.PRIVATE,
                       onChanged: (type) => setState(() {
-                        _channelType = type;
+                        if (type != null) {
+                          _channelType = type;
+                        }
                       }),
                     ),
                   ),
@@ -68,16 +72,16 @@ class _AddChannelDialogState extends State<AddChannelDialog> {
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
-                FlatButton(
-                  child: Text('Cancel'),
+                TextButton(
                   onPressed: () => Navigator.of(context).pop(null),
+                  child: Text('Cancel'),
                 ),
-                RaisedButton(
-                  child: Text('Add'),
+                ElevatedButton(
                   onPressed: () => Navigator.of(context).pop({
                     'name': _controller.value.text,
                     'type': _channelType,
                   }),
+                  child: Text('Add'),
                 ),
               ],
             )

@@ -7,7 +7,7 @@ import 'package:twilio_programmable_chat_example/invite/invite_model.dart';
 class InvitePage extends StatefulWidget {
   final InviteBloc inviteBloc;
 
-  InvitePage({this.inviteBloc});
+  InvitePage({required this.inviteBloc});
 
   @override
   State<StatefulWidget> createState() => InvitePageState();
@@ -20,12 +20,12 @@ class InvitePage extends StatefulWidget {
   ) {
     return Provider<InviteBloc>(
       create: (BuildContext context) => InviteBloc(myIdentity: myIdentity, chatClient: chatClient, channelDescriptor: channelDescriptor),
+      dispose: (BuildContext context, InviteBloc inviteBloc) => inviteBloc.dispose(),
       child: Consumer<InviteBloc>(
         builder: (BuildContext context, InviteBloc inviteBloc, _) => InvitePage(
           inviteBloc: inviteBloc,
         ),
       ),
-      dispose: (BuildContext context, InviteBloc inviteBloc) => inviteBloc.dispose(),
     );
   }
 }
@@ -47,20 +47,20 @@ class InvitePageState extends State<InvitePage> {
       stream: widget.inviteBloc.inviteStream,
       initialData: InviteModel(),
       builder: (BuildContext context, AsyncSnapshot<InviteModel> snapshot) {
-        var model = snapshot.data;
+        final model = snapshot.data ?? InviteModel();
         if (model.isLoading) {
           return Center(child: CircularProgressIndicator());
         } else {
           return ListView.builder(
             itemCount: model.members.length,
             itemBuilder: (BuildContext context, int index) {
-              var member = model.members[index];
+              final member = model.members[index];
               return InkWell(
+                onTap: () => widget.inviteBloc.inviteToChannel(member),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text(member.identity),
+                  child: Text(member.identity ?? ''),
                 ),
-                onTap: () => widget.inviteBloc.inviteToChannel(member),
               );
             },
           );

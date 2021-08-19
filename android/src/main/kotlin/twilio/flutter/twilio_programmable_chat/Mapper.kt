@@ -13,7 +13,6 @@ import com.twilio.chat.Paginator
 import com.twilio.chat.User
 import com.twilio.chat.UserDescriptor
 import com.twilio.chat.Users
-import io.flutter.plugin.common.EventChannel
 import java.text.SimpleDateFormat
 import java.util.Date
 import org.json.JSONArray
@@ -122,22 +121,10 @@ object Mapper {
         }
 
         // Setting flutter event listener for the given channel if one does not yet exist.
-        if (!TwilioProgrammableChatPlugin.channelChannels.containsKey(channel.sid)) {
-            TwilioProgrammableChatPlugin.channelChannels[channel.sid] = EventChannel(TwilioProgrammableChatPlugin.messenger, "twilio_programmable_chat/${channel.sid}")
-            TwilioProgrammableChatPlugin.channelChannels[channel.sid]?.setStreamHandler(object : EventChannel.StreamHandler {
-                override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
-                    TwilioProgrammableChatPlugin.debug("Mapper.channelToMap => EventChannel for Channel(${channel.sid}) attached")
-                    TwilioProgrammableChatPlugin.channelListeners[channel.sid] = ChannelListener(events)
-                    channel.addListener(TwilioProgrammableChatPlugin.channelListeners[channel.sid])
-                }
-
-                override fun onCancel(arguments: Any?) {
-                    TwilioProgrammableChatPlugin.debug("Mapper.channelToMap => EventChannel for Channel(${channel.sid}) detached")
-                    channel.removeListener(TwilioProgrammableChatPlugin.channelListeners[channel.sid])
-                    TwilioProgrammableChatPlugin.channelListeners.remove(channel.sid)
-                    TwilioProgrammableChatPlugin.channelChannels.remove(channel.sid)
-                }
-            })
+        if (channel.sid != null && !TwilioProgrammableChatPlugin.channelListeners.containsKey(channel.sid)) {
+            TwilioProgrammableChatPlugin.debug("Creating ChannelListener for channel: '${channel.sid}'")
+            TwilioProgrammableChatPlugin.channelListeners[channel.sid] = ChannelListener(channel.sid)
+            channel.addListener(TwilioProgrammableChatPlugin.channelListeners[channel.sid])
         }
 
         return mapOf(

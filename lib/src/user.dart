@@ -2,22 +2,22 @@ part of twilio_programmable_chat;
 
 class User {
   //#region Private API properties
-  String _friendlyName;
+  String? _friendlyName;
 
-  final Attributes _attributes;
+  Attributes _attributes;
 
   final String _identity;
 
-  bool _isOnline;
+  bool _isOnline = false;
 
-  bool _isNotifiable;
+  bool _isNotifiable = false;
 
-  bool _isSubscribed;
+  bool _isSubscribed = false;
   //#endregion
 
   //#region Public API properties
   /// Method that returns the friendlyName from the user info.
-  String get friendlyName {
+  String? get friendlyName {
     return _friendlyName;
   }
 
@@ -49,15 +49,13 @@ class User {
   }
   //#endregion
 
-  User(this._identity, this._attributes)
-      : assert(_identity != null),
-        assert(_attributes != null);
+  User(this._identity, this._attributes);
 
   /// Construct from a map.
   factory User._fromMap(Map<String, dynamic> map) {
-    var user = User(
+    final user = User(
       map['identity'],
-      Attributes.fromMap(map['attributes'].cast<String, dynamic>()),
+      map['attributes'] != null ? Attributes.fromMap(map['attributes'].cast<String, dynamic>()) : Attributes(AttributesType.NULL, null),
     );
     user._updateFromMap(map);
     return user;
@@ -77,8 +75,9 @@ class User {
   /// Update properties from a map.
   void _updateFromMap(Map<String, dynamic> map) {
     _friendlyName = map['friendlyName'];
-    _isOnline = map['isOnline'];
-    _isNotifiable = map['isNotifiable'];
-    _isSubscribed = map['isSubscribed'];
+    _isOnline = map['isOnline'] ?? false;
+    _isNotifiable = map['isNotifiable'] ?? false;
+    _isSubscribed = map['isSubscribed'] ?? false;
+    _attributes = map['attributes'] != null ? Attributes.fromMap(map['attributes'].cast<String, dynamic>()) : _attributes;
   }
 }

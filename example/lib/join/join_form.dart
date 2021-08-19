@@ -10,20 +10,20 @@ class JoinForm extends StatefulWidget {
   final JoinBloc joinBloc;
 
   const JoinForm({
-    Key key,
-    @required this.joinBloc,
+    Key? key,
+    required this.joinBloc,
   }) : super(key: key);
 
   static Widget create(BuildContext context) {
     final backendService = Provider.of<BackendService>(context, listen: false);
     return Provider<JoinBloc>(
       create: (BuildContext context) => JoinBloc(backendService: backendService),
+      dispose: (BuildContext context, JoinBloc joinBloc) => joinBloc.dispose(),
       child: Consumer<JoinBloc>(
         builder: (BuildContext context, JoinBloc joinBloc, _) => JoinForm(
           joinBloc: joinBloc,
         ),
       ),
-      dispose: (BuildContext context, JoinBloc joinBloc) => joinBloc.dispose(),
     );
   }
 
@@ -33,7 +33,7 @@ class JoinForm extends StatefulWidget {
 
 class _JoinFormState extends State<JoinForm> {
   final TextEditingController _nameController = TextEditingController();
-  VoidCallback _listener;
+  late VoidCallback _listener;
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _JoinFormState extends State<JoinForm> {
             padding: const EdgeInsets.only(left: 16, right: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _buildChildren(joinModel),
+              children: _buildChildren(joinModel ?? JoinModel()),
             ),
           );
         });
@@ -91,12 +91,21 @@ class _JoinFormState extends State<JoinForm> {
   Widget _buildButton(JoinModel chatModel) {
     return chatModel.isLoading
         ? const Center(child: CircularProgressIndicator())
-        : FlatButton(
+        : TextButton(
             onPressed: chatModel.canSubmit && !chatModel.isLoading ? _submit : null,
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                return Theme.of(context).appBarTheme.textTheme?.headline6?.color ?? Colors.white;
+              }),
+              backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                if (states.contains(MaterialState.disabled)) {
+                  return Colors.grey.shade300;
+                } else {
+                  return Theme.of(context).appBarTheme.color ?? Theme.of(context).primaryColor;
+                }
+              }),
+            ),
             child: const Text('JOIN'),
-            color: Theme.of(context).appBarTheme?.color ?? Theme.of(context).primaryColor,
-            textColor: Theme.of(context).appBarTheme?.textTheme?.headline6?.color ?? Colors.white,
-            disabledColor: Colors.grey.shade300,
           );
   }
 
@@ -104,7 +113,12 @@ class _JoinFormState extends State<JoinForm> {
     try {
       await widget.joinBloc.submit();
       await Navigator.of(context).push(
-        MaterialPageRoute<ChatPage>(fullscreenDialog: true, builder: (BuildContext context) => ChatPage.create(context, widget.joinBloc.model)),
+        MaterialPageRoute<ChatPage>(
+          fullscreenDialog: true,
+          builder: (BuildContext context) {
+            return ChatPage.create(context, widget.joinBloc.model);
+          },
+        ),
       );
     } on PlatformException catch (error) {
       print(error);

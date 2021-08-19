@@ -4,7 +4,9 @@ part of twilio_programmable_chat;
 class TwilioProgrammableChat {
   static const MethodChannel _methodChannel = MethodChannel('twilio_programmable_chat');
 
-  static const EventChannel _chatChannel = EventChannel('twilio_programmable_chat/room');
+  static const EventChannel _chatChannel = EventChannel('twilio_programmable_chat/chat');
+
+  static const EventChannel _channelEventChannel = EventChannel('twilio_programmable_chat/channel');
 
   static const EventChannel _mediaProgressChannel = EventChannel('twilio_programmable_chat/media_progress');
 
@@ -12,14 +14,14 @@ class TwilioProgrammableChat {
 
   static const EventChannel _notificationChannel = EventChannel('twilio_programmable_chat/notification');
 
-  static StreamSubscription _loggingStream;
+  static StreamSubscription? _loggingStream;
 
   static bool _dartDebug = false;
 
-  static ChatClient chatClient;
+  static ChatClient? chatClient;
 
   static Exception _convertException(PlatformException err) {
-    var code = int.tryParse(err.code);
+    final code = int.tryParse(err.code);
     // If code is an integer, then it is a Twilio ErrorInfo exception.
     if (code != null) {
       return ErrorInfo(int.parse(err.code), err.message, err.details as int);
@@ -49,9 +51,6 @@ class TwilioProgrammableChat {
     bool native = false,
     bool sdk = false,
   }) async {
-    assert(dart != null);
-    assert(native != null);
-    assert(sdk != null);
     _dartDebug = dart;
     await _methodChannel.invokeMethod('debug', {'native': native, 'sdk': sdk});
     if (native && _loggingStream == null) {
@@ -61,16 +60,14 @@ class TwilioProgrammableChat {
         }
       });
     } else if (!native && _loggingStream != null) {
-      await _loggingStream.cancel();
+      await _loggingStream?.cancel();
       _loggingStream = null;
     }
   }
 
   /// Create to a [ChatClient].
-  static Future<ChatClient> create(String token, Properties properties) async {
-    assert(token != null);
-    assert(token != '');
-    assert(properties != null);
+  static Future<ChatClient?> create(String token, Properties properties) async {
+    assert(token.isNotEmpty);
 
     if (chatClient != null) {
       throw UnsupportedError('Instantiation of multiple chatClients is not supported.'

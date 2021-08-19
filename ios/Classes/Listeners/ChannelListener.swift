@@ -2,10 +2,10 @@ import Flutter
 import TwilioChatClient
 
 public class ChannelListener: NSObject, TCHChannelDelegate {
-    let events: FlutterEventSink
+    let channelSid: String
 
-    init(_ events: @escaping FlutterEventSink) {
-        self.events = events
+    init(_ channelSid: String) {
+        self.channelSid = channelSid
     }
 
     // onMessageAdded
@@ -13,6 +13,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
         SwiftTwilioProgrammableChatPlugin.debug(
             "ChannelListener.onMessageAdded => messageSid = \(String(describing: message.sid))")
         sendEvent("messageAdded", data: [
+            "channelSid": channelSid,
             "message": Mapper.messageToDict(message, channelSid: channel.sid)
         ])
     }
@@ -24,6 +25,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
             "ChannelListener.onMessageUpdated => messageSid = \(String(describing: message.sid)), " +
             "updated = \(String(describing: updated))")
         sendEvent("messageUpdated", data: [
+            "channelSid": channelSid,
             "message": Mapper.messageToDict(message, channelSid: channel.sid),
             "reason": [
                 "type": "message",
@@ -37,6 +39,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
         SwiftTwilioProgrammableChatPlugin.debug(
             "ChannelListener.onMessageDeleted => messageSid = \(String(describing: message.sid))")
         sendEvent("messageDeleted", data: [
+            "channelSid": channelSid,
             "message": Mapper.messageToDict(message, channelSid: channel.sid)
         ])
     }
@@ -46,6 +49,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
         SwiftTwilioProgrammableChatPlugin.debug(
             "ChannelListener.onMemberAdded => memberSid = \(String(describing: member.sid))")
         sendEvent("memberAdded", data: [
+            "channelSid": channelSid,
             "member": Mapper.memberToDict(member, channelSid: channel.sid) as Any
         ])
     }
@@ -57,6 +61,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
             "ChannelListener.onMemberUpdated => memberSid = \(String(describing: member.sid)), " +
             "updated = \(String(describing: updated))")
         sendEvent("memberUpdated", data: [
+            "channelSid": channelSid,
             "member": Mapper.memberToDict(member, channelSid: channel.sid) as Any,
             "reason": [
                 "type": "member",
@@ -70,6 +75,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
         SwiftTwilioProgrammableChatPlugin.debug(
             "ChannelListener.onMemberDeleted => memberSid = \(String(describing: member.sid))")
         sendEvent("memberDeleted", data: [
+            "channelSid": channelSid,
             "member": Mapper.memberToDict(member, channelSid: channel.sid) as Any
         ])
     }
@@ -80,6 +86,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
             "ChannelListener.onTypingStarted => channelSid = \(String(describing: channel.sid)), " +
             "memberSid = \(String(describing: member.sid))")
         sendEvent("typingStarted", data: [
+            "channelSid": channelSid,
             "channel": Mapper.channelToDict(channel) as Any,
             "member": Mapper.memberToDict(member, channelSid: channel.sid) as Any
         ])
@@ -91,6 +98,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
             "ChannelListener.onTypingEnded => channelSid = \(String(describing: channel.sid)), " +
             "memberSid = \(String(describing: member.sid))")
         sendEvent("typingEnded", data: [
+            "channelSid": channelSid,
             "channel": Mapper.channelToDict(channel) as Any,
             "member": Mapper.memberToDict(member, channelSid: channel.sid) as Any
         ])
@@ -102,6 +110,7 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
         SwiftTwilioProgrammableChatPlugin.debug(
             "ChannelListener.onSynchronizationChanged => channelSid = \(String(describing: channel.sid))")
         sendEvent("synchronizationChanged", data: [
+            "channelSid": channelSid,
             "channel": Mapper.channelToDict(channel) as Any
         ])
     }
@@ -113,6 +122,8 @@ public class ChannelListener: NSObject, TCHChannelDelegate {
             "error": Mapper.errorToDict(error)
             ] as [String: Any?]
 
-        events(eventData)
+        if let events = SwiftTwilioProgrammableChatPlugin.channelEventSink {
+            events(eventData)
+        }
     }
 }

@@ -6,16 +6,19 @@ import 'dart:io';
 
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/services.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 
 part 'attributes.dart';
 part 'channel.dart';
 part 'channel_descriptor.dart';
+part 'channel_events.dart';
 part 'channel_status.dart';
 part 'channel_synchronization_status.dart';
 part 'channel_type.dart';
 part 'channel_update_reason.dart';
 part 'channels.dart';
 part 'chat_client.dart';
+part 'chat_client_events.dart';
 part 'chat_client_synchronization_status.dart';
 part 'connection_state.dart';
 part 'error_info.dart';
@@ -30,7 +33,6 @@ part 'message_type.dart';
 part 'message_update_reason.dart';
 part 'messages.dart';
 part 'notification_level.dart';
-part 'options.dart';
 part 'paginator.dart';
 part 'programmable_chat.dart';
 part 'properties.dart';

@@ -11,39 +11,36 @@ import 'package:twilio_programmable_chat_example/channel/channel_model.dart';
 import 'package:twilio_programmable_chat_example/channel/media_model.dart';
 
 class ChannelBloc {
-  BehaviorSubject<ChannelModel> _messageSubject;
-  ValueStream<ChannelModel> messageStream;
-  BehaviorSubject<String> _typingSubject;
-  ValueStream<String> typingStream;
-  List<StreamSubscription> _subscriptions;
-  Map<String, BehaviorSubject<MediaModel>> mediaSubjects = <String, BehaviorSubject<MediaModel>>{};
+  late BehaviorSubject<ChannelModel> _messageSubject;
+  late ValueStream<ChannelModel> messageStream;
+  late BehaviorSubject<String?> _typingSubject;
+  late ValueStream<String?> typingStream;
+  late List<StreamSubscription> _subscriptions;
+  Map<String?, BehaviorSubject<MediaModel>> mediaSubjects = <String?, BehaviorSubject<MediaModel>>{};
 
   TextEditingController messageController = TextEditingController();
   ScrollController scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
 
   String myUsername;
-  String tempDirPath;
+  String? tempDirPath;
   ChatClient chatClient;
   ChannelDescriptor channelDescriptor;
-  Channel channel;
+  Channel? channel;
 
-  ChannelBloc({@required this.myUsername, @required this.chatClient, @required this.channelDescriptor})
-      : assert(myUsername != null),
-        assert(chatClient != null),
-        assert(channelDescriptor != null) {
+  ChannelBloc({required this.myUsername, required this.chatClient, required this.channelDescriptor}) {
     _messageSubject = BehaviorSubject<ChannelModel>();
     _messageSubject.add(ChannelModel());
     messageStream = _messageSubject.stream;
     _subscriptions = <StreamSubscription>[];
-    _typingSubject = BehaviorSubject<String>();
+    _typingSubject = BehaviorSubject<String?>();
     typingStream = _typingSubject.stream;
     messageController.addListener(_onTyping);
 
     channelDescriptor.getChannel().then((channel) {
       this.channel = channel;
       _subscribeToChannel();
-      channel.getFriendlyName().then((friendlyName) {
+      channel?.getFriendlyName().then((friendlyName) {
         _messageSubject.add(
           _messageSubject.value.copyWith(friendlyName: friendlyName),
         );
@@ -52,38 +49,42 @@ class ChannelBloc {
   }
 
   Future _onTyping() async {
-    await channel.typing();
+    await channel?.typing();
   }
 
   Future _subscribeToChannel() async {
+    final uChannel = channel;
+    if (uChannel == null) {
+      return;
+    }
     print('ChannelBloc::subscribeToChannel');
-    if (channel.hasSynchronized) {
-      await _getMessages(channel);
+    if (uChannel.hasSynchronized) {
+      await _getMessages(uChannel);
     }
 
-    _subscriptions.add(channel.onSynchronizationChanged.listen((event) async {
+    _subscriptions.add(uChannel.onSynchronizationChanged.listen((event) async {
       if (event.synchronizationStatus == ChannelSynchronizationStatus.ALL) {
         await _getMessages(event);
       }
     }));
-    _subscriptions.add(channel.onMessageAdded.listen((Message message) {
+    _subscriptions.add(uChannel.onMessageAdded.listen((Message message) {
       _messageSubject.add(_messageSubject.value.addMessage(message));
       if (message.hasMedia) {
         _getImage(message);
       }
     }));
-    _subscriptions.add(channel.onTypingStarted.listen((TypingEvent event) {
+    _subscriptions.add(uChannel.onTypingStarted.listen((TypingEvent event) {
       _typingSubject.add(event.member.identity);
     }));
-    _subscriptions.add(channel.onTypingEnded.listen((TypingEvent event) {
+    _subscriptions.add(uChannel.onTypingEnded.listen((TypingEvent event) {
       _typingSubject.add(null);
     }));
   }
 
   Future _getMessages(Channel channel) async {
-    var friendlyName = await channel.getFriendlyName();
-    var messageCount = await channel.getMessagesCount();
-    var messages = await channel.messages.getLastMessages(messageCount);
+    final friendlyName = await channel.getFriendlyName();
+    final messageCount = await channel.getMessagesCount();
+    final messages = await channel.messages.getLastMessages(messageCount);
     messages.where((message) => message.hasMedia).forEach(_getImage);
     _messageSubject.add(_messageSubject.value.copyWith(
       friendlyName: friendlyName,
@@ -93,53 +94,64 @@ class ChannelBloc {
   }
 
   Future _updateLastConsumedMessageIndex(Channel channel, List<Message> messages) async {
-    var lastConsumedMessageIndex = (messages?.length ?? 0) > 0 ? messages.last.messageIndex : 0;
-    await channel.messages.setLastConsumedMessageIndexWithResult(lastConsumedMessageIndex);
+    final lastConsumedMessageIndex = messages.isNotEmpty && messages.last.messageIndex != null ? messages.last.messageIndex : 0;
+    await channel.messages.setLastConsumedMessageIndexWithResult(lastConsumedMessageIndex!);
   }
 
   Future sendMessage() async {
-    var message = MessageOptions()
+    final message = MessageOptions()
       ..withBody(messageController.text)
       ..withAttributes({'name': myUsername});
-    await channel.messages.sendMessage(message);
+    await channel?.messages.sendMessage(message);
   }
 
   Future sendImage() async {
-    var image = await _imagePicker.getImage(source: ImageSource.gallery);
+    final image = await _imagePicker.getImage(source: ImageSource.gallery);
     if (image != null) {
-      var file = File(image.path);
-      var mimeType = mime(image.path);
-      var message = MessageOptions()
-        ..withMedia(file, mimeType)
-        ..withAttributes({'name': myUsername});
-      await channel.messages.sendMessage(message);
+      final file = File(image.path);
+      final mimeType = mime(image.path);
+      if (mimeType != null) {
+        final message = MessageOptions()
+          ..withMedia(file, mimeType)
+          ..withAttributes({'name': myUsername});
+        await channel?.messages.sendMessage(message);
+      }
     }
   }
 
   Future leaveChannel() async {
-    if (channel.type == ChannelType.PUBLIC) {
-      return channel.leave();
+    final uChannel = channel;
+    if (uChannel == null) {
+      return;
+    }
+    if (uChannel.type == ChannelType.PUBLIC) {
+      return uChannel.leave();
     } else {
-      await channel.leave();
-      return channel.destroy();
+      await uChannel.leave();
+      return uChannel.destroy();
     }
   }
 
   Future _getImage(Message message) async {
-    var subject = BehaviorSubject<MediaModel>();
+    final uMessageMedia = message.media;
+    if (uMessageMedia == null) {
+      return;
+    }
+    final subject = BehaviorSubject<MediaModel>();
     subject.add(MediaModel(isLoading: true, message: message));
     mediaSubjects[message.sid] = subject;
 
     if (tempDirPath == null) {
-      var tempDir = await getTemporaryDirectory();
+      final tempDir = await getTemporaryDirectory();
       tempDirPath = tempDir.path;
     }
-    var path = '$tempDirPath/'
-        '${(message.media.fileName != null && message.media.fileName.isNotEmpty) ? message.media.fileName : message.media.sid}.'
-        '${extensionFromMime(message.media.type)}';
-    var outputFile = File(path);
+    final uFileName = uMessageMedia.fileName;
+    final path = '$tempDirPath/'
+        '${(uFileName != null && uFileName.isNotEmpty) ? uFileName : uMessageMedia.sid}.'
+        '${extensionFromMime(uMessageMedia.type)}';
+    final outputFile = File(path);
 
-    await message.media.download(outputFile);
+    await uMessageMedia.download(outputFile);
     subject.add(subject.value.copyWith(isLoading: false, file: outputFile));
   }
 

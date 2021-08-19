@@ -5,10 +5,8 @@ part of twilio_programmable_chat;
 /// [Paginator] represents a single page of results. You can get items in this page using [Paginator.items].
 /// The number if items in page can be retrieved using [Paginator.pageSize].
 /// If all items did not fit into single page [Paginator.hasNextPage] will return true. You could use [Paginator.requestNextPage] to get the next page of results.
-/// If [Paginator.hasNextPage()] returns false, then this is the last page. Calling [Paginator.requestNextPage()] on the last page will throw [PlatformException].
+/// If [Paginator.hasNextPage] returns false, then this is the last page. Calling [Paginator.requestNextPage()] on the last page will throw [PlatformException].
 class Paginator<T> {
-  final Map<String, dynamic> _passOn;
-
   final String _itemType;
 
   final String _pageId;
@@ -35,15 +33,11 @@ class Paginator<T> {
     return _hasNextPage;
   }
 
-  Paginator(this._pageId, this._pageSize, this._hasNextPage, this._itemType, this._passOn)
-      : assert(_pageId != null),
-        assert(_pageSize != null),
-        assert(_hasNextPage != null),
-        assert(_itemType != null);
+  Paginator(this._pageId, this._pageSize, this._hasNextPage, this._itemType);
 
   /// Construct from a map.
-  factory Paginator._fromMap(Map<String, dynamic> map, {Map<String, dynamic> passOn}) {
-    var paginator = Paginator<T>(map['pageId'], map['pageSize'], map['hasNextPage'], map['itemType'], passOn);
+  factory Paginator._fromMap(Map<String, dynamic> map) {
+    final paginator = Paginator<T>(map['pageId'], map['pageSize'], map['hasNextPage'], map['itemType']);
     paginator._updateFromMap(map);
     return paginator;
   }
@@ -53,7 +47,7 @@ class Paginator<T> {
     try {
       final methodData = await TwilioProgrammableChat._methodChannel.invokeMethod('Paginator#requestNextPage', <String, Object>{'pageId': _pageId, 'itemType': _itemType});
       final paginatorMap = Map<String, dynamic>.from(methodData);
-      return Paginator<T>._fromMap(paginatorMap, passOn: _passOn);
+      return Paginator<T>._fromMap(paginatorMap);
     } on PlatformException catch (err) {
       if (err.code == 'ERROR' || err.code == 'IllegalStateException') {
         rethrow;
@@ -69,25 +63,27 @@ class Paginator<T> {
       for (final itemMap in itemsList) {
         var item;
         switch (_itemType) {
-          case 'userDescriptor':
-            assert(_passOn['users'] != null);
-            item = (_items as List<UserDescriptor>).firstWhere(
-              (c) => c._identity == itemMap['identity'],
-              orElse: () => UserDescriptor._fromMap(itemMap),
-            );
-            break;
           case 'channelDescriptor':
             item = (_items as List<ChannelDescriptor>).firstWhere(
               (c) => c._sid == itemMap['sid'],
               orElse: () => ChannelDescriptor._fromMap(itemMap),
             );
             break;
+          case 'userDescriptor':
+            item = (_items as List<UserDescriptor>).firstWhere(
+              (c) => c._identity == itemMap['identity'],
+              orElse: () => UserDescriptor._fromMap(itemMap),
+            );
+            break;
         }
-        assert(item != null);
-        if (!_items.contains(item)) {
-          _items.add(item);
+        if (item != null) {
+          if (!_items.contains(item)) {
+            _items.add(item);
+          }
+          if (_itemType == 'channelDescriptor') {
+            item._updateFromMap(itemMap);
+          }
         }
-        item._updateFromMap(itemMap);
       }
     }
   }

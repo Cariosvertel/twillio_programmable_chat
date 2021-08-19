@@ -3,45 +3,45 @@ part of twilio_programmable_chat;
 /// Representation of a [Channel] member object.
 class Member {
   //#region Private API properties
-  final String _sid;
+  final String? _sid;
 
   final Attributes _attributes;
 
-  int _lastConsumedMessageIndex;
+  int? _lastConsumedMessageIndex;
 
-  String _lastConsumptionTimestamp;
+  String? _lastConsumptionTimestamp;
 
   String _channelSid;
 
   // TODO(WLFN): Could be final?
-  String _identity;
+  String? _identity;
 
-  final MemberType _type;
+  final MemberType? _type;
   //#endregion
 
   //#region Public API properties
   /// Returns unique identifier of a member on a [Channel].
-  String get sid {
+  String? get sid {
     return _sid;
   }
 
   /// Returns members last consumed message index for this channel.
-  int get lastConsumedMessageIndex {
+  int? get lastConsumedMessageIndex {
     return _lastConsumedMessageIndex;
   }
 
   /// Return members last consumed message timestamp for this channel.
-  String get lastConsumptionTimestamp {
+  String? get lastConsumptionTimestamp {
     return _lastConsumptionTimestamp;
   }
 
   /// Returns user identity for the current member.
-  String get identity {
+  String? get identity {
     return _identity;
   }
 
   /// Returns [MemberType] of current member.
-  MemberType get type {
+  MemberType? get type {
     return _type;
   }
 
@@ -51,32 +51,24 @@ class Member {
   }
   //#endregion
 
-  Member(this._sid, this._type, this._channelSid, this._attributes)
-      : assert(_sid != null),
-        assert(_type != null),
-        assert(_channelSid != null),
-        assert(_attributes != null);
+  Member(this._sid, this._type, this._channelSid, this._attributes);
 
   /// Construct from a map.
   factory Member._fromMap(Map<String, dynamic> map) {
-    if (map != null) {
-      var member = Member(
-        map['sid'],
-        EnumToString.fromString(MemberType.values, map['type']),
-        map['channelSid'],
-        Attributes.fromMap(map['attributes'].cast<String, dynamic>()),
-      );
-      member._updateFromMap(map);
-      return member;
-    } else {
-      return null;
-    }
+    final member = Member(
+      map['sid'],
+      EnumToString.fromString(MemberType.values, map['type']),
+      map['channelSid'],
+      map['attributes'] != null ? Attributes.fromMap(map['attributes'].cast<String, dynamic>()) : Attributes(AttributesType.NULL, null),
+    );
+    member._updateFromMap(map);
+    return member;
   }
 
   //#region Public API methods
   /// Returns the channel this member belong<s to.
-  Future<Channel> getChannel() async {
-    var channel = await TwilioProgrammableChat.chatClient.channels.getChannel(_channelSid);
+  Future<Channel?> getChannel() async {
+    final channel = await TwilioProgrammableChat.chatClient?.channels.getChannel(_channelSid);
     return channel;
   }
 
@@ -91,14 +83,16 @@ class Member {
   }
 
   /// Return subscribed user object for current member.
-  Future<User> getAndSubscribeUser() async {
+  Future<User?> getAndSubscribeUser() async {
     try {
       final methodData = await TwilioProgrammableChat._methodChannel.invokeMethod('Member#getAndSubscribeUser', {
         'memberSid': _sid,
         'channelSid': _channelSid,
       });
       final userMap = Map<String, dynamic>.from(methodData);
-      return User._fromMap(userMap);
+      if (userMap['identity'] != null) {
+        return User._fromMap(userMap);
+      }
     } on PlatformException catch (err) {
       throw TwilioProgrammableChat._convertException(err);
     }

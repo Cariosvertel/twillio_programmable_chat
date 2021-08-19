@@ -52,9 +52,6 @@ The iOS and Android SDKs take different approaches to push notifications. **Nota
 3. Rather than introducing a dependency on `firebase` to the plugin, we have elected to leave token retrieval, message and notification handling to the user of the plugin.
     - An example of this can be seen in the example app.
     - Notable parts of the implementation in the example app include:
-      * `Application.kt` - which is used to allow for receiving background messages with `firebase_messaging`
-       and displaying them with `flutter_local_notifications`, as the plugins must be registered independently
-       of the `Activity` lifecycle.
       * `main.dart` - which configures `FirebaseMessaging` with message handlers,
        initializes `FlutterLocalNotificationsPlugin`, and creates a notification channel.
       * `chat_bloc.dart` - which retrieves tokens (if on Android), and registers and unregisters for notifications.

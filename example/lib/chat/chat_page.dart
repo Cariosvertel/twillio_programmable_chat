@@ -11,22 +11,22 @@ class ChatPage extends StatefulWidget {
   final ChatBloc chatBloc;
 
   const ChatPage({
-    Key key,
-    @required this.chatBloc,
+    Key? key,
+    required this.chatBloc,
   }) : super(key: key);
 
   static Widget create(BuildContext context, JoinModel joinModel) {
     return Provider<ChatBloc>(
       create: (BuildContext context) => ChatBloc(
-        myIdentity: joinModel.identity,
-        chatClient: joinModel.chatClient,
+        myIdentity: joinModel.identity ?? '',
+        chatClient: joinModel.chatClient ?? ChatClient(joinModel.identity ?? ''),
       ),
+      dispose: (BuildContext context, ChatBloc chatBloc) => chatBloc.dispose(),
       child: Consumer<ChatBloc>(
         builder: (BuildContext context, ChatBloc chatBloc, _) => ChatPage(
           chatBloc: chatBloc,
         ),
       ),
-      dispose: (BuildContext context, ChatBloc chatBloc) => chatBloc.dispose(),
     );
   }
 
@@ -68,8 +68,8 @@ class _ChatPageState extends State<ChatPage> {
         ),
         body: _channelList(),
         floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
           onPressed: _showAddChannelDialog,
+          child: Icon(Icons.add),
         ),
       ),
     );
@@ -98,9 +98,9 @@ class _ChatPageState extends State<ChatPage> {
         initialData: ChatModel(isLoading: true),
         stream: widget.chatBloc.channelDescriptorStream,
         builder: (BuildContext context, AsyncSnapshot<ChatModel> snapshot) {
-          var chatModel = snapshot.data;
-          var publicChannels = chatModel.publicChannels.where((publicChannel) => !chatModel.userChannels.any((userChannel) => userChannel.sid == publicChannel.sid)).toList();
-          var channels = [...chatModel.userChannels, ...publicChannels];
+          final chatModel = snapshot.data ?? ChatModel(isLoading: true);
+          final publicChannels = chatModel.publicChannels.where((publicChannel) => !chatModel.userChannels.any((userChannel) => userChannel.sid == publicChannel.sid)).toList();
+          final channels = [...chatModel.userChannels, ...publicChannels];
 
           if (chatModel.isLoading) {
             return _buildProgressIndicator();
@@ -114,8 +114,8 @@ class _ChatPageState extends State<ChatPage> {
                 shrinkWrap: true,
                 itemCount: channels.length,
                 itemBuilder: (BuildContext context, int index) {
-                  var channelDescriptor = channels[index];
-                  return _buildChannel(channelDescriptor, widget.chatBloc.channelStatusMap[channelDescriptor.sid]);
+                  final channelDescriptor = channels[index];
+                  return _buildChannel(channelDescriptor, widget.chatBloc.channelStatusMap[channelDescriptor.sid] ?? ChannelStatus.UNKNOWN);
                 },
               )
             ],
@@ -134,7 +134,7 @@ class _ChatPageState extends State<ChatPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(channel.friendlyName, style: TextStyle(fontSize: 16.0)),
+                Text(channel.friendlyName ?? '', style: TextStyle(fontSize: 16.0)),
                 Row(
                   children: <Widget>[
                     Text('Members: ${channel.membersCount}'),
@@ -170,7 +170,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future _showAddChannelDialog() async {
-    var result = await showDialog<Map<String, dynamic>>(
+    final result = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (context) {
           return AddChannelDialog();
@@ -181,7 +181,10 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future _joinChannel(ChannelDescriptor channelDescriptor) async {
-    var channel = await channelDescriptor.getChannel();
+    final channel = await channelDescriptor.getChannel();
+    if (channel == null) {
+      return;
+    }
     if (channel.status != ChannelStatus.JOINED) {
       await widget.chatBloc.joinChannel(channel);
     }
@@ -197,8 +200,8 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future _editChannel(ChannelDescriptor channelDescriptor) async {
-    var _controller = TextEditingController(text: channelDescriptor.friendlyName);
-    var result = await showDialog<String>(
+    final _controller = TextEditingController(text: channelDescriptor.friendlyName);
+    final result = await showDialog<String>(
         context: context,
         builder: (BuildContext context) {
           return Dialog(
@@ -222,13 +225,13 @@ class _ChatPageState extends State<ChatPage> {
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: <Widget>[
-                      FlatButton(
-                        child: Text('Cancel'),
+                      TextButton(
                         onPressed: () => Navigator.of(context).pop(null),
+                        child: Text('Cancel'),
                       ),
-                      RaisedButton(
-                        child: Text('Update'),
+                      ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(_controller.value.text),
+                        child: Text('Update'),
                       ),
                     ],
                   )

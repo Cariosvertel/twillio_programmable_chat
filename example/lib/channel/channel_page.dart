@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +14,8 @@ class ChannelPage extends StatefulWidget {
   final ChannelBloc channelBloc;
 
   const ChannelPage({
-    Key key,
-    @required this.channelBloc,
+    Key? key,
+    required this.channelBloc,
   }) : super(key: key);
 
   static Widget create(
@@ -24,12 +26,12 @@ class ChannelPage extends StatefulWidget {
   ) {
     return Provider<ChannelBloc>(
       create: (BuildContext context) => ChannelBloc(myUsername: myUsername, chatClient: chatClient, channelDescriptor: channelDescriptor),
+      dispose: (BuildContext context, ChannelBloc channelBloc) => channelBloc.dispose(),
       child: Consumer<ChannelBloc>(
         builder: (BuildContext context, ChannelBloc channelBloc, _) => ChannelPage(
           channelBloc: channelBloc,
         ),
       ),
-      dispose: (BuildContext context, ChannelBloc channelBloc) => channelBloc.dispose(),
     );
   }
 
@@ -45,7 +47,7 @@ class _ChannelPageState extends State<ChannelPage> {
           stream: widget.channelBloc.messageStream,
           initialData: ChannelModel(),
           builder: (BuildContext context, AsyncSnapshot<ChannelModel> snapshot) {
-            var model = snapshot.data;
+            final model = snapshot.data;
             return Scaffold(
               appBar: AppBar(
                   title: Row(
@@ -56,7 +58,7 @@ class _ChannelPageState extends State<ChannelPage> {
                           padding: const EdgeInsets.all(8.0),
                           child: Icon(Icons.lock_outline),
                         ),
-                      Text('${model.friendlyName}'),
+                      Text('${model?.friendlyName}'),
                     ],
                   ),
                   actions: <Widget>[
@@ -80,7 +82,7 @@ class _ChannelPageState extends State<ChannelPage> {
                       },
                     ),
                   ]),
-              body: _buildBody(model),
+              body: _buildBody(model ?? ChannelModel()),
             );
           }),
     );
@@ -121,7 +123,7 @@ class _ChannelPageState extends State<ChannelPage> {
                 stream: widget.channelBloc.typingStream,
                 initialData: null,
                 builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                  var data = snapshot.data;
+                  final data = snapshot.data;
                   if (data != null) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -153,7 +155,7 @@ class _ChannelPageState extends State<ChannelPage> {
                   icon: Icon(Icons.send),
                   onPressed: () async {
                     await widget.channelBloc.sendMessage();
-                    await widget.channelBloc.scrollController.jumpTo(widget.channelBloc.scrollController.position.maxScrollExtent);
+                    widget.channelBloc.scrollController.jumpTo(widget.channelBloc.scrollController.position.maxScrollExtent);
                     setState(() {
                       widget.channelBloc.messageController.text = '';
                       FocusScope.of(context).requestFocus(FocusNode());
@@ -169,7 +171,7 @@ class _ChannelPageState extends State<ChannelPage> {
   }
 
   Widget _buildMessage(Message message) {
-    var currentUserIsAuthor = messageFromMe(message);
+    final currentUserIsAuthor = messageFromMe(message);
     return Padding(
       padding: EdgeInsets.only(
         top: 8.0,
@@ -198,7 +200,7 @@ class _ChannelPageState extends State<ChannelPage> {
                         stream: widget.channelBloc.mediaSubjects[message.sid],
                         initialData: MediaModel(isLoading: true, message: message),
                         builder: (BuildContext context, AsyncSnapshot<MediaModel> snapshot) {
-                          var data = snapshot.data;
+                          final data = snapshot.data ?? MediaModel(isLoading: true, message: message);
                           // Set height/width on Containers to avoid jank
                           if (data.isLoading) {
                             return Container(
@@ -209,16 +211,12 @@ class _ChannelPageState extends State<ChannelPage> {
                               ),
                             );
                           } else {
-                            print('ChannelPage => building message sid: ${message.sid} index: ${message.messageIndex} file: ${data.file.path}');
+                            print('ChannelPage => building message sid: ${message.sid} index: ${message.messageIndex} file: ${data.file?.path}');
                             return Container(
                               height: 220,
                               width: 220,
                               child: Center(
-                                child: Image.file(
-                                  data.file,
-                                  height: 200,
-                                  width: 200,
-                                ),
+                                child: _showImage(data.file),
                               ),
                             );
                           }
@@ -226,7 +224,7 @@ class _ChannelPageState extends State<ChannelPage> {
                       )),
             Column(
               children: <Widget>[
-                Text('${(doesNameExist(message)) ? message.attributes?.getJSONObject()['name'] : 'UNKNOWN'}', style: TextStyle(color: Colors.white)),
+                Text('${(doesNameExist(message)) ? message.attributes.getJSONObject()!['name'] : 'UNKNOWN'}', style: TextStyle(color: Colors.white)),
                 Text(_formatMessageCreationTime(message), style: TextStyle(color: Colors.white)),
               ],
             ),
@@ -240,10 +238,28 @@ class _ChannelPageState extends State<ChannelPage> {
     return message.author == widget.channelBloc.chatClient.myIdentity;
   }
 
-  bool doesNameExist(Message message) => message.attributes != null && message.attributes.type == AttributesType.OBJECT && message.attributes.getJSONObject().containsKey('name');
+  bool doesNameExist(Message message) {
+    final uJson = message.attributes.getJSONObject();
+    return message.attributes.type == AttributesType.OBJECT && uJson != null && uJson.containsKey('name');
+  }
+
+  Widget _showImage(File? file) {
+    final uFile = file;
+    if (uFile == null) {
+      return Text('file variable is null.');
+    }
+    return Image.file(
+      uFile,
+      height: 200,
+      width: 200,
+    );
+  }
 
   String _formatMessageCreationTime(Message message) {
-    var dateCreated = message.dateCreated;
+    final dateCreated = message.dateCreated;
+    if (dateCreated == null) {
+      return 'No data for date created.';
+    }
     if (dateCreated.difference(DateTime.now()).inDays > 0) {
       return '${dateCreated.month} ${dateCreated.day} @ ${dateCreated.hour}:${dateCreated.minute}';
     } else {
@@ -277,26 +293,26 @@ class _ChannelPageState extends State<ChannelPage> {
   }
 
   Future _leaveChannel() async {
-    if (widget.channelBloc.channel.type == ChannelType.PRIVATE && widget.channelBloc.channel.createdBy == widget.channelBloc.myUsername) {
-      var leavePrivateChannel = await showDialog<bool>(
+    if (widget.channelBloc.channel?.type == ChannelType.PRIVATE && widget.channelBloc.channel?.createdBy == widget.channelBloc.myUsername) {
+      final leavePrivateChannel = await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
               title: Text('You created this channel'),
               content: Text('If you leave this channel, it will be deleted since you created it.'),
               actions: <Widget>[
-                FlatButton(
-                  child: Text('Cancel'),
+                TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
+                  child: Text('Cancel'),
                 ),
-                RaisedButton(
-                  child: Text('Leave'),
+                ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(true),
+                  child: Text('Leave'),
                 ),
               ],
             );
           });
-      if (leavePrivateChannel) {
+      if (leavePrivateChannel != null && leavePrivateChannel) {
         await widget.channelBloc.leaveChannel();
         Navigator.of(context).pop();
       }
